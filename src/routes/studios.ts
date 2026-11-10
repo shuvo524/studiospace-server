@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { ObjectId } from "mongodb";
 import { getDB } from "../config/db";
 
 const router = Router();
@@ -10,6 +11,31 @@ router.get("/", async (_req, res) => {
   } catch (error) {
     console.error("Failed to fetch studios:", error);
     res.status(500).json({ message: "Failed to fetch studios" });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid studio id" });
+      return;
+    }
+
+    const studio = await getDB()
+      .collection("studios")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!studio) {
+      res.status(404).json({ message: "Studio not found" });
+      return;
+    }
+
+    res.json(studio);
+  } catch (error) {
+    console.error("Failed to fetch studio:", error);
+    res.status(500).json({ message: "Failed to fetch studio" });
   }
 });
 
