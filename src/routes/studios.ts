@@ -86,5 +86,53 @@ router.post("/", async (req, res) => {
     res.status(500).json({ message: "Failed to add studio" });
   }
 });
+router.put("/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
 
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid studio id" });
+      return;
+    }
+
+    const {
+      title,
+      category,
+      hourlyRate,
+      securityDeposit,
+      maxCapacity,
+      location,
+      imageUrl,
+      amenities,
+      overview,
+    } = req.body;
+
+    const updatedFields = {
+      title,
+      category,
+      hourlyRate: Number(hourlyRate),
+      securityDeposit: Number(securityDeposit) || 0,
+      maxCapacity: Number(maxCapacity) || 1,
+      location,
+      imageUrl,
+      amenities: Array.isArray(amenities) ? amenities : [],
+      overview: overview || "",
+      updatedAt: new Date(),
+    };
+
+    const result = await getDB()
+      .collection("studios")
+      .updateOne({ _id: new ObjectId(id) }, { $set: updatedFields });
+
+    if (result.matchedCount === 0) {
+      res.status(404).json({ message: "Studio not found" });
+      return;
+    }
+
+    res.json({ message: "Studio updated successfully" });
+  } catch (error) {
+    console.error("Failed to update studio:", error);
+    res.status(500).json({ message: "Failed to update studio" });
+  }
+});
 export default router;
