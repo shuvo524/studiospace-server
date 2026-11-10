@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db";
+import studiosRouter from "./routes/studios";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -17,6 +18,8 @@ app.use(express.json());
 app.get("/", (_req, res) => {
   res.send("StudioSpace server is running");
 });
+
+app.use("/api/studios", studiosRouter);
 
 async function startServer() {
   await connectDB();
