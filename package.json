@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/shuvo524/studiospace-server/issues"
   },
-  "homepage": "https://github.com/shuvo524/studiospace-server#readme"
+  "homepage": "https://github.com/shuvo524/studiospace-server#readme",
+  "dependencies": {
+    "express": "^5.3.0"
+  }
 }
