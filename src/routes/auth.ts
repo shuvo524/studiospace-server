@@ -1,4 +1,5 @@
-import { Router } from "express";
+import crypto from "crypto";
+import { Request, Router } from "express";
 import jwt from "jsonwebtoken";
 
 const router = Router();
@@ -12,14 +13,31 @@ function getCookieOptions() {
   };
 }
 
+// Only our own Next.js server knows this secret key.
+function hasValidInternalKey(req: Request): boolean {
+  const expected = process.env.INTERNAL_API_KEY;
+  const received = req.header("x-internal-key");
+  if (!expected || !received) return false;
+
+  const a = Buffer.from(expected);
+  const b = Buffer.from(received);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 router.post("/jwt", (req, res) => {
-  const { email, name } = req.body;
   const secret = process.env.JWT_SECRET;
 
-  if (!secret) {
+  if (!secret || !process.env.INTERNAL_API_KEY) {
     res.status(500).json({ message: "Server configuration error" });
     return;
   }
+
+  if (!hasValidInternalKey(req)) {
+    res.status(403).json({ message: "Forbidden: invalid internal key" });
+    return;
+  }
+
+  const { email, name } = req.body;
 
   if (!email || typeof email !== "string") {
     res.status(400).json({ message: "Email is required" });
