@@ -6,6 +6,7 @@ import { connectDB } from "./config/db";
 import authRouter from "./routes/auth";
 import studiosRouter from "./routes/studios";
 import bookingsRouter from "./routes/bookings";
+import wishlistRouter from "./routes/wishlist";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -30,6 +31,7 @@ app.get("/", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/studios", studiosRouter);
 app.use("/api/bookings", bookingsRouter);
+app.use("/api/wishlist", wishlistRouter);
 
 async function startServer() {
   await connectDB();
