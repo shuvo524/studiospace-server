@@ -135,4 +135,28 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update studio" });
   }
 });
+router.delete("/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid studio id" });
+      return;
+    }
+
+    const result = await getDB()
+      .collection("studios")
+      .deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      res.status(404).json({ message: "Studio not found" });
+      return;
+    }
+
+    res.json({ message: "Studio deleted successfully" });
+  } catch (error) {
+    console.error("Failed to delete studio:", error);
+    res.status(500).json({ message: "Failed to delete studio" });
+  }
+});
 export default router;
