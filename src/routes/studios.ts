@@ -5,6 +5,25 @@ import { verifyToken, AuthRequest } from "../middleware/verifyToken";
 
 const router = Router();
 const studios = () => getDB().collection("studios");
+// Keeps only valid http(s) links and allows at most 5 extra images.
+function cleanGallery(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  const links: string[] = [];
+  for (const item of value) {
+    if (typeof item !== "string") continue;
+    const link = item.trim();
+    try {
+      const url = new URL(link);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        links.push(link);
+      }
+    } catch {
+      // ignore invalid links
+    }
+  }
+  return links.slice(0, 5);
+}
 
 // All studios (search, category filter, sort, limit)
 router.get("/", async (req, res) => {
@@ -90,6 +109,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
       location,
       imageUrl,
       amenities,
+      gallery,
       overview,
     } = req.body;
 
@@ -108,6 +128,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
       imageUrl,
       amenities: Array.isArray(amenities) ? amenities : [],
       overview: overview || "",
+      gallery: cleanGallery(gallery),
       ownerEmail: req.user!.email,
       ownerName: req.user!.name,
       rating: 0,
@@ -157,6 +178,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
       location,
       imageUrl,
       amenities,
+      gallery,
       overview,
     } = req.body;
 
@@ -173,6 +195,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
           imageUrl,
           amenities: Array.isArray(amenities) ? amenities : [],
           overview: overview || "",
+          gallery: cleanGallery(gallery),
           updatedAt: new Date(),
         },
       }
