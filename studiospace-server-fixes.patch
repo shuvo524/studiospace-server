@@ -1,0 +1,297 @@
+diff --git a/package.json b/package.json
+index a295b24..3733324 100644
+--- a/package.json
++++ b/package.json
+@@ -6,7 +6,8 @@
+   "scripts": {
+     "dev": "tsx watch src/index.ts",
+     "build": "tsc",
+-    "start": "node dist/index.js"
++    "start": "node dist/index.js",
++    "seed": "tsx src/seed.ts"
+   },
+   "repository": {
+     "type": "git",
+diff --git a/src/routes/studios.ts b/src/routes/studios.ts
+index e69b85e..ffd002f 100644
+--- a/src/routes/studios.ts
++++ b/src/routes/studios.ts
+@@ -111,6 +111,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
+       amenities,
+       gallery,
+       overview,
++      cancellationPolicy,
+     } = req.body;
+ 
+     if (!title || !category || !hourlyRate || !location || !imageUrl) {
+@@ -128,6 +129,10 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
+       imageUrl,
+       amenities: Array.isArray(amenities) ? amenities : [],
+       overview: overview || "",
++      cancellationPolicy:
++        typeof cancellationPolicy === "string" && cancellationPolicy.trim()
++          ? cancellationPolicy.trim()
++          : "Flexible — free cancellation up to 24 hours before the session",
+       gallery: cleanGallery(gallery),
+       ownerEmail: req.user!.email,
+       ownerName: req.user!.name,
+@@ -180,6 +185,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+       amenities,
+       gallery,
+       overview,
++      cancellationPolicy,
+     } = req.body;
+ 
+     await studios().updateOne(
+@@ -195,6 +201,10 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
+           imageUrl,
+           amenities: Array.isArray(amenities) ? amenities : [],
+           overview: overview || "",
++          cancellationPolicy:
++            typeof cancellationPolicy === "string" && cancellationPolicy.trim()
++              ? cancellationPolicy.trim()
++              : "Flexible — free cancellation up to 24 hours before the session",
+           gallery: cleanGallery(gallery),
+           updatedAt: new Date(),
+         },
+diff --git a/src/seed.ts b/src/seed.ts
+new file mode 100644
+index 0000000..4a738e0
+--- /dev/null
++++ b/src/seed.ts
+@@ -0,0 +1,235 @@
++import "dotenv/config";
++import { connectDB } from "./config/db";
++
++// Demo catalogue for StudioSpace: 10 studios, 2 per category, so the
++// Featured section can show 6 and every category filter has results.
++// Run with: npm run seed
++// Safe to re-run: studios are matched by title and never duplicated.
++
++const HOST = {
++  ownerName: "Test Host",
++  ownerEmail: "test@example.com",
++};
++
++const FLEXIBLE =
++  "Flexible — free cancellation up to 24 hours before the session";
++const MODERATE =
++  "Moderate — free cancellation up to 3 days before the session";
++const STRICT =
++  "Strict — free cancellation up to 7 days before the session, then 50% refund";
++
++const img = (id: string) =>
++  `https://images.unsplash.com/${id}?q=80&w=1600&auto=format&fit=crop`;
++
++const studios = [
++  {
++    title: "Golden Hour Photo Studio",
++    category: "Photo Studio",
++    hourlyRate: 50,
++    securityDeposit: 100,
++    maxCapacity: 12,
++    location: "Gulshan, Dhaka",
++    imageUrl: img("photo-1598300042247-d088f8ab3a91"),
++    gallery: [
++      img("photo-1516035069371-29a1b244cc32"),
++      img("photo-1492691527719-9d1e07e534b4"),
++    ],
++    amenities: ["Cyc wall", "Lighting kit", "Backdrops", "Makeup room", "Wi-Fi", "Air conditioning"],
++    overview:
++      "A sun-drenched photo studio in the heart of Gulshan with a seamless cyc wall, professional strobe lighting and a dedicated makeup corner. Ideal for fashion editorials, product shoots and portrait sessions that need soft, golden natural light all day.",
++    cancellationPolicy: FLEXIBLE,
++    rating: 4.9,
++    reviewCount: 37,
++  },
++  {
++    title: "Northlight Portrait Loft",
++    category: "Photo Studio",
++    hourlyRate: 35,
++    securityDeposit: 60,
++    maxCapacity: 8,
++    location: "Banani, Dhaka",
++    imageUrl: img("photo-1516035069371-29a1b244cc32"),
++    gallery: [img("photo-1598300042247-d088f8ab3a91")],
++    amenities: ["Backdrops", "Props", "Lighting kit", "Wi-Fi", "Restroom"],
++    overview:
++      "A cosy portrait loft with huge north-facing windows, textured backdrops and a curated prop shelf. Loved by portrait, maternity and personal-branding photographers who want flattering daylight without harsh shadows.",
++    cancellationPolicy: MODERATE,
++    rating: 4.7,
++    reviewCount: 21,
++  },
++  {
++    title: "Tejgaon Cinema Sound Stage",
++    category: "Film Stage",
++    hourlyRate: 120,
++    securityDeposit: 400,
++    maxCapacity: 40,
++    location: "Tejgaon, Dhaka",
++    imageUrl: img("photo-1485846234645-a62644f84728"),
++    gallery: [img("photo-1492691527719-9d1e07e534b4")],
++    amenities: ["Green screen", "Soundproofing", "Lighting kit", "Parking", "Kitchenette", "Air conditioning"],
++    overview:
++      "A full-size sound stage minutes from the FDC area, with a 3-wall green screen, grid lighting and proper sound treatment. Built for commercials, music videos and short films that need a controlled, professional set.",
++    cancellationPolicy: STRICT,
++    rating: 4.8,
++    reviewCount: 15,
++  },
++  {
++    title: "Warehouse Film Loft",
++    category: "Film Stage",
++    hourlyRate: 85,
++    securityDeposit: 250,
++    maxCapacity: 30,
++    location: "Uttara, Dhaka",
++    imageUrl: img("photo-1492691527719-9d1e07e534b4"),
++    gallery: [img("photo-1485846234645-a62644f84728")],
++    amenities: ["Props", "Parking", "Makeup room", "Wi-Fi", "Restroom"],
++    overview:
++      "An industrial warehouse loft with exposed brick, steel beams and flexible set walls. A favourite for gritty drama scenes, interviews and brand films that need character instead of a blank box.",
++    cancellationPolicy: MODERATE,
++    rating: 4.6,
++    reviewCount: 9,
++  },
++  {
++    title: "Echo Room Podcast Lounge",
++    category: "Podcast Lounge",
++    hourlyRate: 25,
++    securityDeposit: 40,
++    maxCapacity: 5,
++    location: "Dhanmondi, Dhaka",
++    imageUrl: img("photo-1478737270239-2f02b77fc618"),
++    gallery: [img("photo-1598488035139-bdbb2231ce04")],
++    amenities: ["Microphones", "Soundproofing", "Mixing console", "Wi-Fi", "Air conditioning"],
++    overview:
++      "A warm, fully treated podcast lounge with broadcast microphones on boom arms, a 4-channel mixer and room for a three-camera video setup. Walk in with your ideas, walk out with a finished episode.",
++    cancellationPolicy: FLEXIBLE,
++    rating: 5.0,
++    reviewCount: 48,
++  },
++  {
++    title: "Late Night Podcast Den",
++    category: "Podcast Lounge",
++    hourlyRate: 20,
++    securityDeposit: 30,
++    maxCapacity: 4,
++    location: "Mirpur, Dhaka",
++    imageUrl: img("photo-1598488035139-bdbb2231ce04"),
++    gallery: [img("photo-1478737270239-2f02b77fc618")],
++    amenities: ["Microphones", "Soundproofing", "Wi-Fi", "Restroom"],
++    overview:
++      "A moody little den built for conversational and storytelling podcasts, open late for creators who record after work. Acoustic panels, comfy seating and a simple plug-and-play recording chain.",
++    cancellationPolicy: FLEXIBLE,
++    rating: 4.5,
++    reviewCount: 12,
++  },
++  {
++    title: "Analog Soul Music Suite",
++    category: "Music Suite",
++    hourlyRate: 45,
++    securityDeposit: 120,
++    maxCapacity: 10,
++    location: "Mohammadpur, Dhaka",
++    imageUrl: img("photo-1520523839897-bd0b52f945a0"),
++    gallery: [
++      img("photo-1511379938547-c1f69419868d"),
++      img("photo-1470225620780-dba8ba36b745"),
++    ],
++    amenities: ["Mixing console", "Microphones", "Soundproofing", "Air conditioning", "Wi-Fi"],
++    overview:
++      "A recording suite with an analog-flavoured signal chain, a treated live room and an experienced in-house engineer on request. Perfect for vocals, acoustic sessions and full-band demos.",
++    cancellationPolicy: MODERATE,
++    rating: 4.9,
++    reviewCount: 29,
++  },
++  {
++    title: "Beat Lab Production Room",
++    category: "Music Suite",
++    hourlyRate: 30,
++    securityDeposit: 70,
++    maxCapacity: 6,
++    location: "Bashundhara, Dhaka",
++    imageUrl: img("photo-1470225620780-dba8ba36b745"),
++    gallery: [img("photo-1511379938547-c1f69419868d")],
++    amenities: ["Mixing console", "Microphones", "Wi-Fi", "Air conditioning"],
++    overview:
++      "A compact production room for beatmakers and electronic producers, loaded with synths, drum machines and tuned monitoring. Bring your laptop, or create entirely in the room.",
++    cancellationPolicy: FLEXIBLE,
++    rating: 4.7,
++    reviewCount: 18,
++  },
++  {
++    title: "Clay & Canvas Art Workshop",
++    category: "Workshop",
++    hourlyRate: 28,
++    securityDeposit: 50,
++    maxCapacity: 20,
++    location: "Dhanmondi, Dhaka",
++    imageUrl: img("photo-1519508234439-4f23643125c1"),
++    gallery: [img("photo-1461784121038-f088ca1e7714")],
++    amenities: ["Kitchenette", "Restroom", "Wi-Fi", "Props"],
++    overview:
++      "A bright, washable-floor workshop space for art classes, pottery sessions and craft meetups, with long communal tables, easels and a small materials store on site.",
++    cancellationPolicy: FLEXIBLE,
++    rating: 4.8,
++    reviewCount: 24,
++  },
++  {
++    title: "Makers Garage Workshop",
++    category: "Workshop",
++    hourlyRate: 40,
++    securityDeposit: 90,
++    maxCapacity: 15,
++    location: "Uttara, Dhaka",
++    imageUrl: img("photo-1533106418989-88406c7cc8ca"),
++    gallery: [img("photo-1519508234439-4f23643125c1")],
++    amenities: ["Parking", "Restroom", "Wi-Fi", "Kitchenette"],
++    overview:
++      "A hands-on makers garage with workbenches, basic power tools and storage lockers, built for DIY workshops, small builds and hands-on training days.",
++    cancellationPolicy: STRICT,
++    rating: 4.6,
++    reviewCount: 7,
++  },
++];
++
++async function seed() {
++  const db = await connectDB();
++  const collection = db.collection("studios");
++
++  let inserted = 0;
++  let updated = 0;
++
++  for (const studio of studios) {
++    const existing = await collection.findOne({ title: studio.title });
++    if (existing) {
++      await collection.updateOne(
++        { _id: existing._id },
++        {
++          $set: {
++            ...studio,
++            ownerName: existing.ownerName || HOST.ownerName,
++            ownerEmail: existing.ownerEmail || HOST.ownerEmail,
++            updatedAt: new Date(),
++          },
++        },
++      );
++      updated += 1;
++    } else {
++      await collection.insertOne({
++        ...studio,
++        ...HOST,
++        createdAt: new Date(),
++      });
++      inserted += 1;
++    }
++  }
++
++  const total = await collection.countDocuments();
++  console.log(
++    `Seed complete: ${inserted} inserted, ${updated} updated. Studios in database now: ${total}`,
++  );
++  process.exit(0);
++}
++
++seed().catch((error) => {
++  console.error("Seed failed:", error);
++  process.exit(1);
++});

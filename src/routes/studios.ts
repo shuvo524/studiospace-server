@@ -111,6 +111,7 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
       amenities,
       gallery,
       overview,
+      cancellationPolicy,
     } = req.body;
 
     if (!title || !category || !hourlyRate || !location || !imageUrl) {
@@ -128,6 +129,10 @@ router.post("/", verifyToken, async (req: AuthRequest, res: Response) => {
       imageUrl,
       amenities: Array.isArray(amenities) ? amenities : [],
       overview: overview || "",
+      cancellationPolicy:
+        typeof cancellationPolicy === "string" && cancellationPolicy.trim()
+          ? cancellationPolicy.trim()
+          : "Flexible — free cancellation up to 24 hours before the session",
       gallery: cleanGallery(gallery),
       ownerEmail: req.user!.email,
       ownerName: req.user!.name,
@@ -180,6 +185,7 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
       amenities,
       gallery,
       overview,
+      cancellationPolicy,
     } = req.body;
 
     await studios().updateOne(
@@ -195,6 +201,10 @@ router.put("/:id", verifyToken, async (req: AuthRequest, res: Response) => {
           imageUrl,
           amenities: Array.isArray(amenities) ? amenities : [],
           overview: overview || "",
+          cancellationPolicy:
+            typeof cancellationPolicy === "string" && cancellationPolicy.trim()
+              ? cancellationPolicy.trim()
+              : "Flexible — free cancellation up to 24 hours before the session",
           gallery: cleanGallery(gallery),
           updatedAt: new Date(),
         },
